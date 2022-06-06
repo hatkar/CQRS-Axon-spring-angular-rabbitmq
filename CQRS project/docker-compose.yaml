@@ -1,0 +1,65 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: "postgres"
+    ports:
+      - 5433:5432
+    volumes:
+      - ~/apps/postgres2:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_USER=user
+      - POSTGRES_DB=CQRSbanque
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: "pgadmin"
+    ports:
+      - 5050:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=user@domain.com
+      - PGADMIN_DEFAULT_PASSWORD=password
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: "rabbitmq"
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+  cqrsquery:
+    image: bankingcqrsquery:2.8
+    container_name: "cqrsquery"
+    ports:
+      - 8080:8080
+    environment:
+      - DB_HOST=postgres
+      - DB_NAME=CQRSbanque
+      - DB_USERNAME=user
+      - DB_PASSWORD=pass
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_USER=guest
+  cqrscommand:
+    image: bankingcqrsco:1.1
+    container_name: "cqrscommand"
+    ports:
+      - 8081:8081
+    environment:
+      - DB_HOST=postgres
+      - DB_NAME=CQRSbanquecommand
+      - DB_USERNAME=user
+      - DB_PASSWORD=pass
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_USER=guest
+  cqrsangular:
+    image: banqueapp:1.2
+    container_name: "cqrsangular"
+    ports:
+      - 8083:80
+    environment:
+      - QUERY_API_URL=http://localhost:8080/Api/v1
+      - CMD_API_URL=http://localhost:8081/commands/account
